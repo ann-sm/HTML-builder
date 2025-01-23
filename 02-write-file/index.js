@@ -25,9 +25,9 @@ RL.on('SIGINT', () => endRL())
 
 const endRL = () => {
   console.log('Bye!');
-  fs.unlink(path.join(__dirname, 'text.txt'), (err) => {
-    if (err) throw err;
-  });
+  // fs.unlink(path.join(__dirname, 'text.txt'), (err) => {
+  //   if (err) throw err;
+  // });
   RL.close();
   process.exit();
 }
