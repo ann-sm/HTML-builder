@@ -1,13 +1,34 @@
 const fsPromises = require('fs/promises');
+const fs = require('fs');
 const path = require('path');
 
 
-fsPromises.mkdir(path.join(__dirname, 'project-dist'), { recursive: true });
+fs.mkdir(path.join(__dirname, 'project-dist'), { recursive: true }, err => {
+  if (err) throw err;
+  console.log('Create project-dist-dir');
+});
+
+fs.mkdir(path.join(__dirname, 'project-dist', 'assets'), { recursive: true }, err => {
+  if (err) throw err;
+  console.log('Create assets dir');
+});
+
+
+replaceTags();
+getFiles();
+copyAssets(path.join(__dirname, 'assets'), path.join(__dirname, 'project-dist', 'assets'));
+
+
 
 // HTML
-fsPromises.copyFile(path.join(__dirname, 'template.html'), path.join(__dirname, 'project-dist', 'index.html'));
-
 async function replaceTags() {
+  if (path.join(__dirname, 'project-dist').includes('index.html')) {
+    fs.unlink(path.join(__dirname, 'project-dist', 'index.html'), err => {
+      if (err) throw err;
+    });
+  }
+
+  await fsPromises.copyFile(path.join(__dirname, 'template.html'), path.join(__dirname, 'project-dist', 'index.html'));
   const componentsFiles = await fsPromises.readdir(path.join(__dirname, 'components'));
 
   for (const htmlFile of componentsFiles) {
@@ -19,7 +40,6 @@ async function replaceTags() {
   }
 }
 
-replaceTags();
 
 
 // CSS
@@ -44,23 +64,19 @@ async function getFiles() {
   })
 }
 
-getFiles();
 
 // ASSETS
-fsPromises.mkdir(path.join(__dirname, 'project-dist', 'assets'), { recursive: true });
-
 async function copyAssets(src, dest) {
   const assetsFiles = await fsPromises.readdir(src, { withFileTypes: true });
   for (const file of assetsFiles) {
     if (file.isDirectory()) {
       const srcPath = path.join(src, file.name);
       const destPath = path.join(dest, file.name);
-      copyAssets(srcPath, destPath);
+      await copyAssets(srcPath, destPath);
     } else {
-      fsPromises.mkdir(dest, { recursive: true });
-      fsPromises.copyFile(path.join(src, file.name), path.join(dest, file.name));
+      await fsPromises.mkdir(dest, { recursive: true });
+      await fsPromises.copyFile(path.join(src, file.name), path.join(dest, file.name));
     }
   }
 }
 
-copyAssets(path.join(__dirname, 'assets'), path.join(__dirname, 'project-dist', 'assets'));
